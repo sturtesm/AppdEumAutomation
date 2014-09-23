@@ -1,0 +1,38 @@
+[
+        { "beacon":
+            {   "eumAppKey": "AD-AAB-AAA-JJS",
+                "ver": "2",
+                "dataType": "R",
+                "clientRequestGUID": "1ad7f8b3_3df3_11e4_8217_fc1a191313b5",
+                "pageUrl": "http://www.synthetic-eum-test-page.com",
+                "pageTitle": null,
+                "userPageName": null,
+                "pageReferrer": null,
+                "pageType": 2,
+                "baseGUID": null,
+                "parentGUID": null,
+                "parentPageUrl": null,
+                "parentPageType": 0,
+                "parentLifecyclePhase": 1,
+                "geoCountry": null,
+                "geoRegion": null,
+                "geoCity": null,
+                "localIP": null,
+                "navOrXhrMetrics": {
+                    "PLC": 1,
+                    "FBT": 447,
+                    "DDT": 1,
+                    "DPT": 13,
+                    "PLT": 461,
+                    "ARE": 0
+                },
+                "cookieMetrics": {},
+                "resourceTimingInfo": null,
+                "otherClientRequestGUIDs": null,
+                "btTime": null,
+                "userData": null,
+                "errors": null,
+                "eom": 1 },
+            "useHTTPS": false
+        }
+]
