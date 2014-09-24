@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 use strict;
 use warnings;
@@ -14,6 +14,9 @@ my $ug  = UUID::Generator::PurePerl->new();
 #URI Encode / Decoder
 my $uri = URI::Encode->new( { encode_reserved => 0 } );
 
+#global ip list
+my @globalIP = ();
+my @globalCityList = ();
 
 #################
 #
@@ -39,6 +42,35 @@ my $uri = URI::Encode->new( { encode_reserved => 0 } );
 #
 ##################
 
+sub ingestGlobalIPList
+{
+    open IN, "<global-ip-list.csv" or die "Error reading global-ip-list.csv: $!";
+
+    while (<IN>)
+    {
+        my @fields = split (',', $_);
+
+        push @globalIP, $fields[0];
+    }
+
+    close IN;
+}
+
+sub ingestGlobalCityList
+{
+    open IN, "<global-city-list.csv" or die "Error reading global-city-list.csv: $!";
+
+    while (<IN>)
+    {
+        #format is - Country, Region / State, City
+        my $line = $_;
+
+        chomp ($line);
+
+        push @globalCityList, $line;
+    }
+
+}
 sub getURIEncodedString
 {
     my $str = shift;
@@ -105,7 +137,7 @@ sub getPageURL
     my $url = shift;
     
     if (isUndefined($url) ) {
-       $url = "http://www.dom-building-e-time.com";
+       $url = "http://www.custom-geo-city-region-final.com";
     }
 
     my $encodedURL = getURIEncodedString($url);
@@ -125,19 +157,40 @@ sub getParentPageURL
     return getPageURL($url);
 }
 
-sub getGeoCountry
+sub getGeoInfo
 {
-    return "gc=US";
-}
+    my $length = int ( scalar @globalCityList );
+    my $index = rand($length);
 
-sub getGeoRegion
-{
-    return "gr=NY";
-}
+    my $geoInfo = $globalCityList[$index];
+    my @fields = split(/,/, $geoInfo);
 
-sub getGeoCity
+    return "gc=$fields[0]&gr=$fields[1]&gt=$fields[2]";
+}     
+
+sub getCustomIP
 {
-    return "gt=Valhalla";
+    my $size = scalar(@globalIP);
+    my $index = int(rand($size));
+
+    my $ip = $globalIP[$index];
+
+    my @octets = split(/\./, $ip);
+    my @encodedOcts = ();
+
+    foreach my $oct (@octets)
+    {
+        #my $encodedOctet = getURIEncodedString($oct);
+        my $encodedOctet = sprintf("%x",$oct);
+        push @encodedOcts, $encodedOctet;
+
+        #print "Pushing $encodedOctet...\n";
+    }
+    my $encodedOctet = join('', @encodedOcts);
+
+    #print "Generated encoded octets: $encodedOctet\n\n";
+    
+    return "lp=$encodedOctet";
 }
 
 sub getParentPageType
@@ -215,9 +268,8 @@ sub getPageMetrics
 
     #my $metrics="{PLC:1,FBT:251,DDT:0,DPT:0,PLT:251,ARE:0,}";
     
-    print "-------------\n";
-    print "$metricList\n";
-    print "$encodedMetrics\n";
+    print "[Raw Metrics] $metricList\n";
+    print "[Encoded Metrics] $encodedMetrics\n";
     
     return "mn=${encodedMetrics}";
     
@@ -234,12 +286,17 @@ sub getEndOfMessage
 ############     MAIN    ##################
 #
 
+#read the global ip list
+ingestGlobalIPList();
+ingestGlobalCityList();
 
 my $beaconURI="http://col.eum-appdynamics.com/eumcollector/adrum.gif";
 
-for (my $i = 0; $i < 200; $i++) 
+for (my $i = 0; $i < 400; $i++) 
 {
     my @beaconParams = ();
+
+    print "--------------------------\n\n";
 
     push (@beaconParams, getAppKey());
     push (@beaconParams, getVR());
@@ -248,19 +305,17 @@ for (my $i = 0; $i < 200; $i++)
     push (@beaconParams, getPageURL());
     push (@beaconParams, getPageType());
     #push (@beaconParams, getParentPageURL());
-    #push (@beaconParams, getGeoCountry());
-    #push (@beaconParams, getGeoRegion());
-    #push (@beaconParams, getGeoCity());
     #push (@beaconParams, getParentPageType());
+    push (@beaconParams, getGeoInfo());
     push (@beaconParams, getPageMetrics());
+    #push (@beaconParams, getCustomIP());
     push (@beaconParams, getEndOfMessage());
 
     my $params = join ('&', @beaconParams);
 
     my $qualifiedURI="$beaconURI?$params";
 
-    print "\n---------------------------\n";
-    print "requesting beacon URI: $qualifiedURI\n";
+    print "Beacon URI: $qualifiedURI\n";
     
     my $rc = get($qualifiedURI);
     
